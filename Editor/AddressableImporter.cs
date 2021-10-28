@@ -229,12 +229,30 @@ public class AddressableImporter : AssetPostprocessor
     /// <returns>True if a group is found.</returns>
     static bool TryGetGroup(AddressableAssetSettings settings, string groupName, out AddressableAssetGroup group)
     {
+        group = null;
+        
         if (string.IsNullOrWhiteSpace(groupName))
         {
             group = settings.DefaultGroup;
             return true;
         }
-        return ((group = settings.groups.Find(g => string.Equals(g.Name, groupName.Trim()))) == null) ? false : true;
+
+        foreach (var settingsGroup in settings.groups)
+        {
+            if (settingsGroup == null || string.IsNullOrEmpty(settingsGroup.Name))
+            {
+                Debug.LogError($"{nameof(AddressableImporter)} {nameof(TryGetGroup)} ERROR at GroupName {groupName} Addressable Group {settingsGroup}");
+                continue;
+            }
+
+            if (!string.Equals(settingsGroup.Name, groupName.Trim())) 
+                continue;
+            
+            group = settingsGroup;
+            break;
+        }
+        
+        return group == null ? false : true;
     }
 
     /// <summary>
