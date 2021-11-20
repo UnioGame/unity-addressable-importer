@@ -7,7 +7,6 @@ using UnityEditor.AddressableAssets.Settings;
 using System;
 using System.Linq;
 using System.IO;
-using System.Text.RegularExpressions;
 using UnityEditor.AddressableAssets.Settings.GroupSchemas;
 using UnityEditor.Experimental.SceneManagement;
 
@@ -15,6 +14,11 @@ public class AddressableImporter : AssetPostprocessor
 {
     static void OnPostprocessAllAssets(string[] importedAssets, string[] deletedAssets, string[] movedAssets, string[] movedFromAssetPaths)
     {
+        var importSettings = AddressableImportSettings.Instance;
+
+        if (!importSettings || !importSettings.enablePostprocess)
+            return;
+        
         // Skip if all imported and deleted assets are addressables configurations.
         var isConfigurationPass =
             (importedAssets.Length > 0 && importedAssets.All(x => x.StartsWith("Assets/AddressableAssetsData"))) &&
@@ -32,7 +36,7 @@ public class AddressableImporter : AssetPostprocessor
             }
             return;
         }
-        var importSettings = AddressableImportSettings.Instance;
+        
         if (importSettings == null)
         {
             Debug.LogWarningFormat("[AddressableImporter] import settings file not found.\nPlease go to Assets/AddressableAssetsData folder, right click in the project window and choose 'Create > Addressable Assets > Import Settings'.");
