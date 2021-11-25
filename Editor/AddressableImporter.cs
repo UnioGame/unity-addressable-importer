@@ -12,21 +12,19 @@ using UnityEditor.AddressableAssets.Settings.GroupSchemas;
 
 public class AddressableImporter : AssetPostprocessor
 {
-    static void OnPostprocessAllAssets(string[] importedAssets, string[] deletedAssets, string[] movedAssets, string[] movedFromAssetPaths)
+    public static void ProcessAllAssets(string[] importedAssets, string[] deletedAssets, string[] movedAssets,
+        string[] movedFromAssetPaths)
     {
         var importSettings = AddressableImportSettings.Instance;
-
-        if (!importSettings || !importSettings.enablePostprocess)
-            return;
         
         // Skip if all imported and deleted assets are addressables configurations.
         var isConfigurationPass =
             (importedAssets.Length > 0 && importedAssets.All(x => x.StartsWith("Assets/AddressableAssetsData"))) &&
             (deletedAssets.Length > 0 && deletedAssets.All(x => x.StartsWith("Assets/AddressableAssetsData")));
+        
         if (isConfigurationPass)
-        {
             return;
-        }
+        
         var settings = AddressableAssetSettingsDefaultObject.Settings;
         if (settings == null)
         {
@@ -90,6 +88,16 @@ public class AddressableImporter : AssetPostprocessor
         {
             AssetDatabase.SaveAssets();
         }
+    }
+
+    static void OnPostprocessAllAssets(string[] importedAssets, string[] deletedAssets, string[] movedAssets, string[] movedFromAssetPaths)
+    {
+        var importSettings = AddressableImportSettings.Instance;
+
+        if (!importSettings || !importSettings.enablePostprocess)
+            return;
+        
+        ProcessAllAssets(importedAssets,deletedAssets,movedAssets,movedFromAssetPaths);
     }
 
     static AddressableAssetGroup CreateAssetGroup<SchemaType>(AddressableAssetSettings settings, string groupName)
@@ -275,40 +283,41 @@ public class AddressableImporter : AssetPostprocessor
         /// <param name="settings">Reference to the <see cref="AddressableAssetSettings"/></param>
         public static void ReimportFolders(IEnumerable<String> assetPaths)
         {
-            HashSet<string> pathsToImport = new HashSet<string>();
+            var pathsToImport = new HashSet<string>();
             foreach (var assetPath in assetPaths)
             {
-                if (Directory.Exists(assetPath))
+                if (!Directory.Exists(assetPath)) continue;
+                
+                // Add the folder itself.
+                pathsToImport.Add(assetPath.Replace('\\', '/'));
+                
+                // Add sub-folders.
+                var dirsToAdd = Directory.GetDirectories(assetPath, "*", SearchOption.AllDirectories);
+                foreach (var dir in dirsToAdd)
                 {
-                    // Add the folder itself.
-                    pathsToImport.Add(assetPath.Replace('\\', '/'));
-                    // Add sub-folders.
-                    var dirsToAdd = Directory.GetDirectories(assetPath, "*", SearchOption.AllDirectories);
-                    foreach (var dir in dirsToAdd)
+                    // Filter out .dirname and dirname~, those are invisible to Unity.
+                    if (!dir.StartsWith(".") && !dir.EndsWith("~"))
                     {
-                        // Filter out .dirname and dirname~, those are invisible to Unity.
-                        if (!dir.StartsWith(".") && !dir.EndsWith("~"))
-                        {
-                            pathsToImport.Add(dir.Replace('\\', '/'));
-                        }
+                        pathsToImport.Add(dir.Replace('\\', '/'));
                     }
-                    // Add files.
-                    var filesToAdd = Directory.GetFiles(assetPath, "*", SearchOption.AllDirectories);
-                    foreach (var file in filesToAdd)
+                }
+                
+                // Add files.
+                var filesToAdd = Directory.GetFiles(assetPath, "*", SearchOption.AllDirectories);
+                foreach (var file in filesToAdd)
+                {
+                    // Filter out meta and DS_Store files.
+                    if (!file.EndsWith(".meta") && !file.EndsWith(".DS_Store"))
                     {
-                        // Filter out meta and DS_Store files.
-                        if (!file.EndsWith(".meta") && !file.EndsWith(".DS_Store"))
-                        {
-                            pathsToImport.Add(file.Replace('\\', '/'));
-                        }
+                        pathsToImport.Add(file.Replace('\\', '/'));
                     }
                 }
             }
-            if (pathsToImport.Count > 0)
-            {
-                Debug.Log($"AddressableImporter: Found {pathsToImport.Count} asset paths...");
-                OnPostprocessAllAssets(pathsToImport.ToArray(), new string[0], new string[0], new string[0]);
-            }
+
+            if (pathsToImport.Count <= 0) return;
+            
+            Debug.Log($"AddressableImporter: Found {pathsToImport.Count} asset paths...");
+            ProcessAllAssets(pathsToImport.ToArray(), new string[0], new string[0], new string[0]);
         }
 
         /// <summary>
