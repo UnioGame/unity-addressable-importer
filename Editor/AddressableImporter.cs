@@ -1,5 +1,4 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
 using UnityEditor.AddressableAssets;
@@ -8,7 +7,6 @@ using System;
 using System.Linq;
 using System.IO;
 using UnityEditor.AddressableAssets.Settings.GroupSchemas;
-
 
 public class AddressableImporter : AssetPostprocessor
 {
@@ -49,7 +47,7 @@ public class AddressableImporter : AssetPostprocessor
         // Apply import rules.
         var prefabStage = UnityEditor.SceneManagement.PrefabStageUtility.GetCurrentPrefabStage();
 #else
-        var prefabStage = PrefabStageUtility.GetCurrentPrefabStage();
+        var prefabStage = UnityEditor.Experimental.SceneManagement.PrefabStageUtility.GetCurrentPrefabStage();
 #endif   
         
 #if UNITY_2020_1_OR_NEWER
