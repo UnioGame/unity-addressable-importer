@@ -13,6 +13,28 @@ public class AddressableImporter : AssetPostprocessor
     public static void ProcessAllAssets(string[] importedAssets, string[] deletedAssets, string[] movedAssets,
         string[] movedFromAssetPaths)
     {
+        var isDirty = false;
+        try
+        {
+            //Place the Asset Database in a state where
+            //importing is suspended for most APIs
+            AssetDatabase.StartAssetEditing();
+            isDirty = ProcessAddressableAssets(importedAssets, deletedAssets, movedAssets, movedFromAssetPaths);
+        }
+        finally
+        {
+            //By adding a call to StopAssetEditing inside
+            //a "finally" block, we ensure the AssetDatabase
+            //state will be reset when leaving this function
+            AssetDatabase.StopAssetEditing();
+        }
+        
+        if (isDirty)
+            AssetDatabase.SaveAssets();
+    }
+
+    private static bool ProcessAddressableAssets(string[] importedAssets, string[] deletedAssets, string[] movedAssets, string[] movedFromAssetPaths)
+    {
         var importSettings = AddressableImportSettings.Instance;
         
         // Skip if all imported and deleted assets are addressables configurations.
@@ -21,7 +43,7 @@ public class AddressableImporter : AssetPostprocessor
             (deletedAssets.Length > 0 && deletedAssets.All(x => x.StartsWith("Assets/AddressableAssetsData")));
         
         if (isConfigurationPass)
-            return;
+            return false;
         
         var settings = AddressableAssetSettingsDefaultObject.Settings;
         if (settings == null)
@@ -30,16 +52,16 @@ public class AddressableImporter : AssetPostprocessor
             {
                 Debug.LogWarningFormat("[Addressables] settings file not found.\nPlease go to Menu/Window/Asset Management/Addressables, then click 'Create Addressables Settings' button.");
             }
-            return;
+            return false;
         }
         
         if (importSettings == null)
         {
             Debug.LogWarningFormat("[AddressableImporter] import settings file not found.\nPlease go to Assets/AddressableAssetsData folder, right click in the project window and choose 'Create > Addressable Assets > Import Settings'.");
-            return;
+            return false;
         }
         if (importSettings.rules == null || importSettings.rules.Count == 0)
-            return;
+            return false;
 
         var dirty = false;
 
@@ -82,12 +104,9 @@ public class AddressableImporter : AssetPostprocessor
             }
         }
 
-        if (dirty)
-        {
-            AssetDatabase.SaveAssets();
-        }
+        return dirty;
     }
-
+    
     static void OnPostprocessAllAssets(string[] importedAssets, string[] deletedAssets, string[] movedAssets, string[] movedFromAssetPaths)
     {
         var importSettings = AddressableImportSettings.Instance;
