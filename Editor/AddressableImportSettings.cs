@@ -27,6 +27,28 @@ public class AddressableImportSettings : ScriptableObject
 #endif
     public List<AddressableImportRule> rules = new List<AddressableImportRule>();
 
+    [Space]
+    [Tooltip("User defined Rules for managing imported assets.")]
+#if ODIN_INSPECTOR
+    [TitleGroup("custom rules")]
+    [ListDrawerSettings(HideAddButton = false,Expanded = false,DraggableItems = true,
+        HideRemoveButton = false,
+        ListElementLabelName = nameof(AddressableImporterCustomRuleAsset.Name))]
+    [Searchable(FilterOptions = SearchFilterOptions.ISearchFilterableInterface)]
+    [InlineEditor]
+#endif
+    public List<AddressableImporterCustomRuleAsset> customRulesAssets = new List<AddressableImporterCustomRuleAsset>();
+    
+    [Tooltip("User defined Rules for managing imported assets.")]
+#if ODIN_INSPECTOR
+    [TitleGroup("custom rules")]
+    [ListDrawerSettings(HideAddButton = false,Expanded = false,DraggableItems = true,HideRemoveButton = false,
+        ListElementLabelName = nameof(AddressableImporterCustomRule.Name))]
+    [Searchable(FilterOptions = SearchFilterOptions.ISearchFilterableInterface)]
+#endif
+    [SerializeReference]
+    public List<AddressableImporterCustomRule> customRules = new List<AddressableImporterCustomRule>();
+    
     [ButtonMethod]
     public void Save()
     {

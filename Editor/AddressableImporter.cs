@@ -91,17 +91,41 @@ public class AddressableImporter : AssetPostprocessor
                 dirty |= ApplyImportRule(movedAsset, movedFromAssetPath, settings, importSettings);
         }
 
+        //import custom rules
+        
+        foreach (var importedAsset in importedAssets)
+        {
+            if (prefabStage == null || prefabAssetPath != importedAsset) // Ignore current editing prefab asset.
+            {
+                importSettings.customRules.ForEach(x => x.Import(importedAsset,null,settings,importSettings));
+                importSettings.customRulesAssets.ForEach(x => x.Import(importedAsset,null,settings,importSettings));
+            }
+        }
+
+        for (var i = 0; i < movedAssets.Length; i++)
+        {
+            var movedAsset = movedAssets[i];
+            var movedFromAssetPath = movedFromAssetPaths[i];
+            
+            if (prefabStage == null || prefabAssetPath != movedAsset) // Ignore current editing prefab asset.
+            {
+                importSettings.customRules.ForEach(x => x.Import(movedAsset,movedFromAssetPath,settings,importSettings));
+                importSettings.customRulesAssets.ForEach(x => x.Import(movedAsset,movedFromAssetPath,settings,importSettings));
+            }
+        }
+        
         foreach (var deletedAsset in deletedAssets)
         {
-            if (TryGetMatchedRule(deletedAsset, importSettings, out var matchedRule))
-            {
-                var guid = AssetDatabase.AssetPathToGUID(deletedAsset);
-                if (!string.IsNullOrEmpty(guid) && settings.RemoveAssetEntry(guid))
-                {
-                    dirty = true;
-                    Debug.LogFormat("[AddressableImporter] Entry removed for {0}", deletedAsset);
-                }
-            }
+            if (!TryGetMatchedRule(deletedAsset, importSettings, out var matchedRule)) 
+                continue;
+            
+            var guid = AssetDatabase.AssetPathToGUID(deletedAsset);
+                
+            if (string.IsNullOrEmpty(guid) || !settings.RemoveAssetEntry(guid)) 
+                continue;
+                
+            dirty = true;
+            Debug.LogFormat("[AddressableImporter] Entry removed for {0}", deletedAsset);
         }
 
         return dirty;
