@@ -1,13 +1,8 @@
 using System;
 using UnityEditor.AddressableAssets.Settings;
 
-#if ODIN_INSPECTOR
-using Sirenix.OdinInspector;
-#endif
-
 [Serializable]
-public abstract class AddressableImporterCustomRule
-    : ISearchFilterable
+public abstract class AddressableImporterCustomRule : IAddressableImporterCustomRule
 {
     public string ruleName = string.Empty;
     

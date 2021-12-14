@@ -43,11 +43,11 @@ public class AddressableImportSettings : ScriptableObject
 #if ODIN_INSPECTOR
     [TitleGroup("custom rules")]
     [ListDrawerSettings(HideAddButton = false,Expanded = false,DraggableItems = true,HideRemoveButton = false,
-        ListElementLabelName = nameof(AddressableImporterCustomRule.Name))]
+        ListElementLabelName = nameof(IAddressableImporterCustomRule.Name))]
     [Searchable(FilterOptions = SearchFilterOptions.ISearchFilterableInterface)]
 #endif
     [SerializeReference]
-    public List<AddressableImporterCustomRule> customRules = new List<AddressableImporterCustomRule>();
+    public List<IAddressableImporterCustomRule> customRules = new List<IAddressableImporterCustomRule>();
     
     [ButtonMethod]
     public void Save()
