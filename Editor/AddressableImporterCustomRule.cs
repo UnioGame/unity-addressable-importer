@@ -5,8 +5,12 @@ using UnityEditor.AddressableAssets.Settings;
 public abstract class AddressableImporterCustomRule : IAddressableImporterCustomRule
 {
     public string ruleName = string.Empty;
+
+    public bool enabled = true;
     
     public virtual string Name => string.IsNullOrEmpty(ruleName) ? GetType().Name : ruleName;
+
+    public virtual bool Enabled => enabled;
     
     public abstract void Import(AddressableAssetRuleData[] importData,
         AddressableAssetSettings settings,

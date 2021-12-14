@@ -10,8 +10,11 @@ using Sirenix.OdinInspector;
 public abstract class AddressableImporterCustomRuleAsset : ScriptableObject,
     ISearchFilterable
 {
-
+    public bool enabled = true;
+    
     public virtual string Name => string.IsNullOrEmpty(name) ? GetType().Name : name;
+    
+    public virtual bool Enabled => enabled;
     
     public abstract void Import(AddressableAssetRuleData[] importData,
         AddressableAssetSettings settings,

@@ -99,13 +99,7 @@ public class AddressableImporter : AssetPostprocessor
             {
                 assetPath = x,
                 movedFromAssetPath = null,
-            })
-            .ToArray();
-        
-        importSettings.customRules.ForEach(x => x.Import(importRuleData,settings,importSettings));
-        importSettings.customRulesAssets.ForEach(x => x.Import(importRuleData,settings,importSettings));
-
-        importRuleData = new AddressableAssetRuleData[movedAssets.Length];
+            }).ToList();
         
         for (var i = 0; i < movedAssets.Length; i++)
         {
@@ -114,15 +108,30 @@ public class AddressableImporter : AssetPostprocessor
             
             if (prefabStage != null && prefabAssetPath == movedAsset) continue;
             
-            importRuleData[i] = new AddressableAssetRuleData()
+            var data = new AddressableAssetRuleData()
             {
                 assetPath = movedAsset,
                 movedFromAssetPath = movedFromAssetPath
             };
+            
+            importRuleData.Add(data);
+        }
+
+        var importDataArray = importRuleData.ToArray();
+
+        foreach (var customRule in importSettings.customRules)
+        {
+            if(!customRule.Enabled)
+                continue;
+            customRule.Import(importDataArray, settings, importSettings);
         }
         
-        importSettings.customRules.ForEach(x => x.Import(importRuleData,settings,importSettings));
-        importSettings.customRulesAssets.ForEach(x => x.Import(importRuleData,settings,importSettings));
+        foreach (var customRule in importSettings.customRulesAssets)
+        {
+            if(!customRule.Enabled)
+                continue;
+            customRule.Import(importDataArray, settings, importSettings);
+        }
         
         foreach (var deletedAsset in deletedAssets)
         {
