@@ -77,6 +77,7 @@ public class AddressableImporter : AssetPostprocessor
 #else
         string prefabAssetPath = prefabStage != null ? prefabStage.prefabAssetPath : null;
 #endif
+        
         foreach (var importedAsset in importedAssets)
         {
             if (prefabStage == null || prefabAssetPath != importedAsset) // Ignore current editing prefab asset.
@@ -92,27 +93,36 @@ public class AddressableImporter : AssetPostprocessor
         }
 
         //import custom rules
-        
-        foreach (var importedAsset in importedAssets)
-        {
-            if (prefabStage == null || prefabAssetPath != importedAsset) // Ignore current editing prefab asset.
+        var importRuleData = importedAssets
+            .Where(x => prefabStage == null || prefabAssetPath != x)
+            .Select(x => new AddressableAssetRuleData()
             {
-                importSettings.customRules.ForEach(x => x.Import(importedAsset,null,settings,importSettings));
-                importSettings.customRulesAssets.ForEach(x => x.Import(importedAsset,null,settings,importSettings));
-            }
-        }
+                assetPath = x,
+                movedFromAssetPath = null,
+            })
+            .ToArray();
+        
+        importSettings.customRules.ForEach(x => x.Import(importRuleData,settings,importSettings));
+        importSettings.customRulesAssets.ForEach(x => x.Import(importRuleData,settings,importSettings));
 
+        importRuleData = new AddressableAssetRuleData[movedAssets.Length];
+        
         for (var i = 0; i < movedAssets.Length; i++)
         {
             var movedAsset = movedAssets[i];
             var movedFromAssetPath = movedFromAssetPaths[i];
             
-            if (prefabStage == null || prefabAssetPath != movedAsset) // Ignore current editing prefab asset.
+            if (prefabStage != null && prefabAssetPath == movedAsset) continue;
+            
+            importRuleData[i] = new AddressableAssetRuleData()
             {
-                importSettings.customRules.ForEach(x => x.Import(movedAsset,movedFromAssetPath,settings,importSettings));
-                importSettings.customRulesAssets.ForEach(x => x.Import(movedAsset,movedFromAssetPath,settings,importSettings));
-            }
+                assetPath = movedAsset,
+                movedFromAssetPath = movedFromAssetPath
+            };
         }
+        
+        importSettings.customRules.ForEach(x => x.Import(importRuleData,settings,importSettings));
+        importSettings.customRulesAssets.ForEach(x => x.Import(importRuleData,settings,importSettings));
         
         foreach (var deletedAsset in deletedAssets)
         {

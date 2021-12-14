@@ -8,8 +8,7 @@ public abstract class AddressableImporterCustomRule : IAddressableImporterCustom
     
     public virtual string Name => string.IsNullOrEmpty(ruleName) ? GetType().Name : ruleName;
     
-    public abstract void Import(string assetPath,
-        string movedFromAssetPath,
+    public abstract void Import(AddressableAssetRuleData[] importData,
         AddressableAssetSettings settings,
         AddressableImportSettings importSettings);
     

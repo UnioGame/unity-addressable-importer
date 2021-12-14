@@ -8,8 +8,7 @@ public interface IAddressableImporterCustomRule : ISearchFilterable
 {
     string Name { get; }
 
-    void Import(string assetPath,
-        string movedFromAssetPath,
+    void Import(AddressableAssetRuleData[] importData,
         AddressableAssetSettings settings,
         AddressableImportSettings importSettings);
 }

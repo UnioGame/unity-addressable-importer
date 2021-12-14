@@ -13,8 +13,7 @@ public abstract class AddressableImporterCustomRuleAsset : ScriptableObject,
 
     public virtual string Name => string.IsNullOrEmpty(name) ? GetType().Name : name;
     
-    public abstract void Import(string assetPath,
-        string movedFromAssetPath,
+    public abstract void Import(AddressableAssetRuleData[] importData,
         AddressableAssetSettings settings,
         AddressableImportSettings importSettings);
 
