@@ -7,11 +7,12 @@ using System;
 using System.Linq;
 using System.IO;
 using UnityEditor.AddressableAssets.Settings.GroupSchemas;
+using UnityEditor.SceneManagement;
 
 public class AddressableImporter : AssetPostprocessor
 {
     public static void ProcessAllAssets(string[] importedAssets, string[] deletedAssets, string[] movedAssets,
-        string[] movedFromAssetPaths)
+        string[] movedFromAssetPaths,bool applyCustomRules = true)
     {
         var isDirty = false;
         try
@@ -19,7 +20,7 @@ public class AddressableImporter : AssetPostprocessor
             //Place the Asset Database in a state where
             //importing is suspended for most APIs
             AssetDatabase.StartAssetEditing();
-            isDirty = ProcessAddressableAssets(importedAssets, deletedAssets, movedAssets, movedFromAssetPaths);
+            isDirty = ProcessAddressableAssets(importedAssets, deletedAssets, movedAssets, movedFromAssetPaths,applyCustomRules);
         }
         finally
         {
@@ -33,7 +34,7 @@ public class AddressableImporter : AssetPostprocessor
             AssetDatabase.SaveAssets();
     }
 
-    private static bool ProcessAddressableAssets(string[] importedAssets, string[] deletedAssets, string[] movedAssets, string[] movedFromAssetPaths)
+    private static bool ProcessAddressableAssets(string[] importedAssets, string[] deletedAssets, string[] movedAssets, string[] movedFromAssetPaths,bool applyCustomRules = true)
     {
         var importSettings = AddressableImportSettings.Instance;
         
@@ -65,18 +66,9 @@ public class AddressableImporter : AssetPostprocessor
 
         var dirty = false;
 
-#if UNITY_2021_2_OR_NEWER
-        // Apply import rules.
-        var prefabStage = UnityEditor.SceneManagement.PrefabStageUtility.GetCurrentPrefabStage();
-#else
-        var prefabStage = UnityEditor.Experimental.SceneManagement.PrefabStageUtility.GetCurrentPrefabStage();
-#endif   
-        
-#if UNITY_2020_1_OR_NEWER
-        string prefabAssetPath = prefabStage != null ? prefabStage.assetPath : null;
-#else
-        string prefabAssetPath = prefabStage != null ? prefabStage.prefabAssetPath : null;
-#endif
+        var prefabData = GetPrefabStageData();
+        var prefabStage = prefabData.prefabStage;
+        var prefabAssetPath = prefabData.prefabAssetPath;
         
         foreach (var importedAsset in importedAssets)
         {
@@ -92,6 +84,53 @@ public class AddressableImporter : AssetPostprocessor
                 dirty |= ApplyImportRule(movedAsset, movedFromAssetPath, settings, importSettings);
         }
 
+        if (applyCustomRules)
+            ApplyCustomRules(importedAssets, deletedAssets, movedAssets, movedFromAssetPaths);
+        
+        foreach (var deletedAsset in deletedAssets)
+        {
+            if (!TryGetMatchedRule(deletedAsset, importSettings, out var matchedRule)) 
+                continue;
+            
+            var guid = AssetDatabase.AssetPathToGUID(deletedAsset);
+                
+            if (string.IsNullOrEmpty(guid) || !settings.RemoveAssetEntry(guid)) 
+                continue;
+                
+            dirty = true;
+            Debug.LogFormat("[AddressableImporter] Entry removed for {0}", deletedAsset);
+        }
+
+        return dirty;
+    }
+
+    private static (PreviewSceneStage prefabStage, string prefabAssetPath) GetPrefabStageData()
+    {
+        
+#if UNITY_2021_2_OR_NEWER
+        // Apply import rules.
+        var prefabStage = UnityEditor.SceneManagement.PrefabStageUtility.GetCurrentPrefabStage();
+#else
+        var prefabStage = UnityEditor.Experimental.SceneManagement.PrefabStageUtility.GetCurrentPrefabStage();
+#endif   
+        
+#if UNITY_2020_1_OR_NEWER
+        string prefabAssetPath = prefabStage != null ? prefabStage.assetPath : null;
+#else
+        string prefabAssetPath = prefabStage != null ? prefabStage.prefabAssetPath : null;
+#endif
+
+        return (prefabStage, prefabAssetPath);
+    }
+    
+    private static void ApplyCustomRules(string[] importedAssets, string[] deletedAssets, string[] movedAssets, string[] movedFromAssetPaths)
+    {
+        var prefabData = GetPrefabStageData();
+        var prefabStage = prefabData.prefabStage;
+        var prefabAssetPath = prefabData.prefabAssetPath;
+        var importSettings = AddressableImportSettings.Instance;
+        var settings = AddressableAssetSettingsDefaultObject.Settings;
+        
         //import custom rules
         var importRuleData = importedAssets
             .Where(x => prefabStage == null || prefabAssetPath != x)
@@ -132,22 +171,6 @@ public class AddressableImporter : AssetPostprocessor
                 continue;
             customRule.Import(importDataArray, settings, importSettings);
         }
-        
-        foreach (var deletedAsset in deletedAssets)
-        {
-            if (!TryGetMatchedRule(deletedAsset, importSettings, out var matchedRule)) 
-                continue;
-            
-            var guid = AssetDatabase.AssetPathToGUID(deletedAsset);
-                
-            if (string.IsNullOrEmpty(guid) || !settings.RemoveAssetEntry(guid)) 
-                continue;
-                
-            dirty = true;
-            Debug.LogFormat("[AddressableImporter] Entry removed for {0}", deletedAsset);
-        }
-
-        return dirty;
     }
     
     static void OnPostprocessAllAssets(string[] importedAssets, string[] deletedAssets, string[] movedAssets, string[] movedFromAssetPaths)
@@ -340,8 +363,9 @@ public class AddressableImporter : AssetPostprocessor
         /// <summary>
         /// Reimporter folders.
         /// </summary>
-        /// <param name="settings">Reference to the <see cref="AddressableAssetSettings"/></param>
-        public static void ReimportFolders(IEnumerable<String> assetPaths)
+        /// <param name="assetPaths">target paths</param>
+        /// <param name="applyCustomRules"></param>
+        public static void ReimportFolders(IEnumerable<String> assetPaths,bool applyCustomRules = true)
         {
             var pathsToImport = new HashSet<string>();
             foreach (var assetPath in assetPaths)
@@ -377,7 +401,8 @@ public class AddressableImporter : AssetPostprocessor
             if (pathsToImport.Count <= 0) return;
             
             Debug.Log($"AddressableImporter: Found {pathsToImport.Count} asset paths...");
-            ProcessAllAssets(pathsToImport.ToArray(), new string[0], new string[0], new string[0]);
+            
+            ProcessAllAssets(pathsToImport.ToArray(), Array.Empty<string>(), Array.Empty<string>(), Array.Empty<string>(),applyCustomRules);
         }
 
         /// <summary>
@@ -385,6 +410,20 @@ public class AddressableImporter : AssetPostprocessor
         /// </summary>
         [MenuItem("Assets/AddressableImporter: Check Folder(s)")]
         private static void CheckFoldersFromSelection()
+        {
+            ReimportSelectedFolderAssets(false);
+        }
+
+        /// <summary>
+        /// Allows assets within the selected folder to be checked agains the Addressable Importer rules.
+        /// </summary>
+        [MenuItem("Assets/AddressableImporter: Check Folder(s) With Rules")]
+        private static void CheckFoldersWithCustomRuleFromSelection()
+        {
+            ReimportSelectedFolderAssets(true);
+        }
+
+        private static void ReimportSelectedFolderAssets(bool useCustomRule)
         {
             List<string> assetPaths = new List<string>();
             // Folders comes up as Object.
@@ -397,12 +436,18 @@ public class AddressableImporter : AssetPostprocessor
                     assetPaths.Add(assetPath);
                 }
             }
-            ReimportFolders(assetPaths);
+            ReimportFolders(assetPaths,useCustomRule);
         }
 
         // Note that we pass the same path, and also pass "true" to the second argument.
         [MenuItem("Assets/AddressableImporter: Check Folder(s)", true)]
-        private static bool ValidateCheckFoldersFromSelection()
+        private static bool ValidateCheckFoldersFromSelection() => ValidateSelectedFolder();
+        
+        // Note that we pass the same path, and also pass "true" to the second argument.
+        [MenuItem("Assets/AddressableImporter: Check Folder(s) With Rules", true)]
+        private static bool ValidateCheckFoldersWithCustomRuleFromSelection() => ValidateSelectedFolder();
+
+        private static bool ValidateSelectedFolder()
         {
             foreach (UnityEngine.Object obj in Selection.GetFiltered(typeof(UnityEngine.Object), SelectionMode.Assets))
             {
