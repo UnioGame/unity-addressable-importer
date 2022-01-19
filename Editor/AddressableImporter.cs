@@ -180,7 +180,7 @@ public class AddressableImporter : AssetPostprocessor
         if (!importSettings || !importSettings.enablePostprocess)
             return;
         
-        ProcessAllAssets(importedAssets,deletedAssets,movedAssets,movedFromAssetPaths);
+        ProcessAllAssets(importedAssets,deletedAssets,movedAssets,movedFromAssetPaths,importSettings.enableCustomPostprocess);
     }
 
     static AddressableAssetGroup CreateAssetGroup<SchemaType>(AddressableAssetSettings settings, string groupName)

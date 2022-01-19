@@ -16,6 +16,7 @@ public class AddressableImportSettings : ScriptableObject
     public const string kDefaultPath = "Assets/AddressableAssetsData/AddressableImportSettings.asset";
 
     public bool enablePostprocess = false;
+    public bool enableCustomPostprocess = false;
     
     [Tooltip("Creates a group if the specified group doesn't exist.")]
     public bool allowGroupCreation = false;
