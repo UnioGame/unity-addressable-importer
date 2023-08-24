@@ -23,7 +23,7 @@ public class AddressableImportSettings : ScriptableObject
 
     [Tooltip("Rules for managing imported assets.")]
 #if ODIN_INSPECTOR
-    [ListDrawerSettings(HideAddButton = false,Expanded = false,DraggableItems = true,HideRemoveButton = false)]
+    [ListDrawerSettings(HideAddButton = false,Expanded = false,DraggableItems = true,HideRemoveButton = false, ListElementLabelName = "@path")]
     [Searchable(FilterOptions = SearchFilterOptions.ISearchFilterableInterface)]
 #endif
     public List<AddressableImportRule> rules = new List<AddressableImportRule>();
