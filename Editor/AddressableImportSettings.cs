@@ -12,6 +12,8 @@ using Sirenix.OdinInspector;
 [CreateAssetMenu(fileName = "AddressableImportSettings", menuName = "Addressable Assets/Import Settings", order = 50)]
 public class AddressableImportSettings : ScriptableObject
 {
+    private static Color _oddColor = new Color(0.2f, 0.4f, 0.3f);
+
     public const string kDefaultConfigObjectName = "addressableimportsettings";
     public const string kDefaultPath = "Assets/AddressableAssetsData/AddressableImportSettings.asset";
 
@@ -23,7 +25,9 @@ public class AddressableImportSettings : ScriptableObject
 
     [Tooltip("Rules for managing imported assets.")]
 #if ODIN_INSPECTOR
-    [ListDrawerSettings(HideAddButton = false,Expanded = false,DraggableItems = true,HideRemoveButton = false, ListElementLabelName = "@path")]
+    [ListDrawerSettings(HideAddButton = false,Expanded = false,DraggableItems = true,
+        HideRemoveButton = false, ListElementLabelName = "@Name",
+        ElementColor = nameof(GetElementColor))]
     [Searchable(FilterOptions = SearchFilterOptions.ISearchFilterableInterface)]
 #endif
     public List<AddressableImportRule> rules = new List<AddressableImportRule>();
@@ -82,6 +86,13 @@ public class AddressableImportSettings : ScriptableObject
             AssetDatabase.SaveAssets();
         }
     }
+    
+    private Color GetElementColor(int index, Color defaultColor)
+    {
+        var result = index % 2 == 0 
+            ? _oddColor : defaultColor;
+        return result;
+    }
 
     public static AddressableImportSettings Instance
     {
@@ -98,4 +109,6 @@ public class AddressableImportSettings : ScriptableObject
             return so;
         }
     }
+    
+    
 }

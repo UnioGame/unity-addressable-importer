@@ -45,6 +45,12 @@ public class AddressableImportRule
     : ISearchFilterable
 {
     #region inspector
+
+    /// <summary>
+    /// name of rule
+    /// </summary>
+    [Tooltip("The assets in this path will be processed.")]
+    public string name;
     
     /// <summary>
     /// Path pattern.
@@ -110,7 +116,8 @@ public class AddressableImportRule
     
     private AddressableImportFilter _filter = new AddressableImportFilter();
     public AddressableImportFilter Filter => _filter ?? new AddressableImportFilter();
-
+    
+    public string Name => string.IsNullOrEmpty(name) ? path : name;
     
     public bool HasLabelRefs
     {
