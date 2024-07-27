@@ -23,7 +23,6 @@ public class AddressableImporter : AssetPostprocessor
     static AddressableImporter()
     {
         Selection.selectionChanged += OnSelectionChanged;
-
     }
 
     static void OnSelectionChanged()
@@ -39,7 +38,7 @@ public class AddressableImporter : AssetPostprocessor
             //Place the Asset Database in a state where
             //importing is suspended for most APIs
             AssetDatabase.StartAssetEditing();
-            isDirty = ProcessAddressableAssets(importedAssets, deletedAssets, movedAssets, movedFromAssetPaths,applyCustomRules);
+            isDirty = ProcessAddressableAssets(importedAssets, deletedAssets, movedAssets, movedFromAssetPaths);
         }
         finally
         {
@@ -55,8 +54,6 @@ public class AddressableImporter : AssetPostprocessor
 
     private static bool ProcessAddressableAssets(string[] importedAssets, string[] deletedAssets, string[] movedAssets, string[] movedFromAssetPaths,bool applyCustomRules = true)
     {
-        var importSettings = AddressableImportSettings.Instance;
-        
         // Skip if all imported and deleted assets are addressables configurations.
         var isConfigurationPass =
             (importedAssets.Length > 0 && importedAssets.All(x => x.StartsWith("Assets/AddressableAssetsData"))) &&
@@ -98,7 +95,6 @@ public class AddressableImporter : AssetPostprocessor
         // Cache the selection active object
         var cachedSelectionActiveObject = selectionActiveObject;
         var dirty = false;
-
         // Apply import rules.
         var prefabStage = PrefabStageUtility.GetCurrentPrefabStage();
 #if UNITY_2020_1_OR_NEWER
@@ -146,9 +142,6 @@ public class AddressableImporter : AssetPostprocessor
             }
         }
 
-        if (applyCustomRules)
-            ApplyCustomRules(importedAssets, deletedAssets, movedAssets, movedFromAssetPaths);
-        
         foreach (var deletedAsset in deletedAssets)
         {
             if (IsAssetIgnored(deletedAsset))
@@ -178,87 +171,11 @@ public class AddressableImporter : AssetPostprocessor
             // saving changed Addressable groups (#71).
             Selection.activeObject = cachedSelectionActiveObject;
         }
-
-        var importDataArray = importRuleData.ToArray();
-
-        foreach (var customRule in importSettings.customRules)
-        {
-            if(!customRule.Enabled)
-                continue;
-            customRule.Import(importDataArray, settings, importSettings);
-        }
         
-        foreach (var customRule in importSettings.customRulesAssets)
-        {
-            if(!customRule.Enabled)
-                continue;
-            customRule.Import(importDataArray, settings, importSettings);
-        }
-
         return dirty;
     }
     
-
-    public static void ApplyCustomRules(string[] importedAssets, string[] deletedAssets, string[] movedAssets, string[] movedFromAssetPaths)
-    {
-        var prefabData = GetPrefabStageData();
-        var prefabStage = prefabData.prefabStage;
-        var prefabAssetPath = prefabData.prefabAssetPath;
-        var importSettings = AddressableImportSettings.Instance;
-        var settings = AddressableAssetSettingsDefaultObject.Settings;
-        
-        //import custom rules
-        var importRuleData = importedAssets
-            .Where(x => prefabStage == null || prefabAssetPath != x)
-            .Select(x => new AddressableAssetRuleData()
-            {
-                assetPath = x,
-                movedFromAssetPath = null,
-            }).ToList();
-        
-        for (var i = 0; i < movedAssets.Length; i++)
-        {
-            var movedAsset = movedAssets[i];
-            var movedFromAssetPath = movedFromAssetPaths[i];
-            
-            if (prefabStage != null && prefabAssetPath == movedAsset) continue;
-            
-            var data = new AddressableAssetRuleData()
-            {
-                assetPath = movedAsset,
-                movedFromAssetPath = movedFromAssetPath
-            };
-            
-            importRuleData.Add(data);
-        }
-
-        var importDataArray = importRuleData.ToArray();
-
-        foreach (var customRule in importSettings.customRules)
-        {
-            if(!customRule.Enabled)
-                continue;
-            customRule.Import(importDataArray, settings, importSettings);
-        }
-        
-        foreach (var customRule in importSettings.customRulesAssets)
-        {
-            if(!customRule.Enabled)
-                continue;
-            customRule.Import(importDataArray, settings, importSettings);
-        }
-    }
-
-    static void OnPostprocessAllAssets(string[] importedAssets, string[] deletedAssets, string[] movedAssets, string[] movedFromAssetPaths)
-    {
-        var importSettings = AddressableImportSettings.Instance;
-
-        if (!importSettings || !importSettings.enablePostprocess)
-            return;
-        
-        ProcessAllAssets(importedAssets,deletedAssets,movedAssets,movedFromAssetPaths,importSettings.enableCustomPostprocess);
-    }
-
+    
     static bool IsAssetIgnored(string assetPath)
     {
         return assetPath.EndsWith(".meta") || assetPath.EndsWith(".DS_Store") || assetPath.EndsWith("~");
@@ -303,6 +220,19 @@ public class AddressableImporter : AssetPostprocessor
                     Debug.LogFormat("[AddressableImporter] Entry removed for {0}", assetPath);
                 }
             }
+        }
+
+        var ruleData = new AddressableAssetRuleData
+        {
+            assetPath = assetPath,
+            movedFromAssetPath = movedFromAssetPath,
+        };
+        
+        foreach (var customRule in importSettings.customRules)
+        {
+            if(!customRule.Enabled) continue;
+            var customRuleDirty = customRule.Import(ruleData, settings, importSettings);
+            dirty = dirty || customRuleDirty;
         }
 
         return dirty;
@@ -460,7 +390,11 @@ public class AddressableImporter : AssetPostprocessor
     /// </summary>
     public class FolderImporter
     {
-        public static void ReimportFolders(IEnumerable<String> assetPaths,bool showConfirmDialog = true)
+        /// <summary>
+        /// Reimporter folders.
+        /// </summary>
+        /// <param name="settings">Reference to the <see cref="AddressableAssetSettings"/></param>
+        public static void ReimportFolders(IEnumerable<String> assetPaths, bool showConfirmDialog = true)
         {
             var pathsToImport = new HashSet<string>();
             foreach (var assetPath in assetPaths)

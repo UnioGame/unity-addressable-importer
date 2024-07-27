@@ -4,13 +4,16 @@
 using Sirenix.OdinInspector;
 #endif
 
-public interface IAddressableImporterCustomRule : ISearchFilterable
+public interface IAddressableImporterCustomRule
+#if ODIN_INSPECTOR_3
+    : ISearchFilterable
+#endif
 {
     string Name { get; }
     
     public bool Enabled{ get; }
 
-    void Import(AddressableAssetRuleData[] importData,
+    bool Import(AddressableAssetRuleData importData,
         AddressableAssetSettings settings,
         AddressableImportSettings importSettings);
 }

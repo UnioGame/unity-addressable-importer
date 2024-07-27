@@ -12,7 +12,7 @@ public abstract class AddressableImporterCustomRule : IAddressableImporterCustom
 
     public virtual bool Enabled => enabled;
     
-    public abstract void Import(AddressableAssetRuleData[] importData,
+    public abstract bool Import(AddressableAssetRuleData importData,
         AddressableAssetSettings settings,
         AddressableImportSettings importSettings);
     

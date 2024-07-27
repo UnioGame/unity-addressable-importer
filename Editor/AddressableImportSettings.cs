@@ -13,50 +13,34 @@ using Sirenix.OdinInspector;
 public class AddressableImportSettings : ScriptableObject
 {
     private static Color _oddColor = new Color(0.2f, 0.4f, 0.3f);
-    public const string kDefaultConfigObjectName = "addressableimportsettings";
-    public const string kDefaultPath = "Assets/AddressableAssetsData/AddressableImportSettings.asset";
 
     [Tooltip("Toggle rules enabled state")]
     [SerializeField]
     public bool rulesEnabled = true;
 
-    public bool enablePostprocess = false;
-    public bool enableCustomPostprocess = false;
-    
     [Tooltip("Creates a group if the specified group doesn't exist.")]
     public bool allowGroupCreation = false;
 
     [Space]
     [Tooltip("Rules for managing imported assets.")]
 #if ODIN_INSPECTOR
-    [ListDrawerSettings(HideAddButton = false,Expanded = false,DraggableItems = true,
+    [ListDrawerSettings(HideAddButton = false,ShowFoldout = true,DraggableItems = true,
         HideRemoveButton = false, ListElementLabelName = "@Name",
         ElementColor = nameof(GetElementColor))]
     [Searchable(FilterOptions = SearchFilterOptions.ISearchFilterableInterface)]
 #endif
-    public List<AddressableImportRule> rules = new List<AddressableImportRule>();
+    public List<AddressableImportRule> rules = new();
 
     [Space]
     [Tooltip("User defined Rules for managing imported assets.")]
 #if ODIN_INSPECTOR
-    [TitleGroup("custom rules")]
-    [ListDrawerSettings(HideAddButton = false,Expanded = false,DraggableItems = true,
-        HideRemoveButton = false,
-        ListElementLabelName = nameof(AddressableImporterCustomRuleAsset.Name))]
-    [Searchable(FilterOptions = SearchFilterOptions.ISearchFilterableInterface)]
-    [InlineEditor]
-#endif
-    public List<AddressableImporterCustomRuleAsset> customRulesAssets = new List<AddressableImporterCustomRuleAsset>();
-    
-    [Tooltip("User defined Rules for managing imported assets.")]
-#if ODIN_INSPECTOR
-    [TitleGroup("custom rules")]
-    [ListDrawerSettings(HideAddButton = false,Expanded = false,DraggableItems = true,HideRemoveButton = false,
+    [TitleGroup("User defined Rules")]
+    [ListDrawerSettings(HideAddButton = false,ShowFoldout = true,DraggableItems = true,HideRemoveButton = false,
         ListElementLabelName = nameof(IAddressableImporterCustomRule.Name))]
     [Searchable(FilterOptions = SearchFilterOptions.ISearchFilterableInterface)]
 #endif
     [SerializeReference]
-    public List<IAddressableImporterCustomRule> customRules = new List<IAddressableImporterCustomRule>();
+    public List<IAddressableImporterCustomRule> customRules = new();
     
     [ButtonMethod]
     public void Save()
@@ -90,6 +74,7 @@ public class AddressableImportSettings : ScriptableObject
             AssetDatabase.SaveAssets();
         }
     }
+
     
     private Color GetElementColor(int index, Color defaultColor)
     {
@@ -129,6 +114,5 @@ public class AddressableImportSettings : ScriptableObject
         AssetDatabase.SaveAssets();
         Selection.activeObject = settings;
     }
-    
     
 }
