@@ -49,7 +49,7 @@ public class AddressableImportRule
     /// <summary>
     /// name of rule
     /// </summary>
-    [Tooltip("The assets in this path will be processed.")]
+    [Tooltip("The rule name.")]
     public string name;
     
     /// <summary>
@@ -68,22 +68,8 @@ public class AddressableImportRule
     /// The group the asset will be added.
     /// </summary>
     [Tooltip("The group name in which the Addressable will be added. Leave blank for the default group.")]
+    [Space]
     public string groupName = string.Empty;
-
-
-    /// <summary>
-    /// Defines if labels will be added or replaced.
-    /// </summary>
-    public LabelWriteMode LabelMode;
-
-    /// <summary>
-    /// Label reference list.
-    /// </summary>
-    [Tooltip("The list of addressable labels (already existing in your project) to be added to the Addressable Asset")]
-    public List<AssetLabelReference> labelRefs;
-
-    [Tooltip("The list of dynamic labels to be added to the Addressable Asset. If an addressable label doesn't exist, then it will be create in your unity project")]
-    public List<string> dynamicLabels;
 
     /// <summary>
     /// Group template to use. Default Group settings will be used if empty.
@@ -95,13 +81,29 @@ public class AddressableImportRule
     /// Controls wether group template will be applied only on group creation, or also to already created groups.
     /// </summary>
     [Tooltip("Defines if the group template will only be applied to new groups, or will also overwrite existing groups settings.")]
+    [Label("Application Mode")]
     public GroupTemplateApplicationMode groupTemplateApplicationMode = GroupTemplateApplicationMode.ApplyOnGroupCreationOnly;
+
+    /// <summary>
+    /// Label reference list.
+    /// </summary>
+    [Tooltip("The list of addressable labels (already existing in your project) to be added to the Addressable Asset")]
+    [Space]
+    public List<AssetLabelReference> labelRefs;
+
+    [Tooltip("The list of dynamic labels to be added to the Addressable Asset. If an addressable label doesn't exist, then it will be create in your unity project")]
+    public List<string> dynamicLabels;
+
+    /// <summary>
+    /// Defines if labels will be added or replaced.
+    /// </summary>
+    public LabelWriteMode LabelMode;
 
     /// <summary>
     /// Simplify address.
     /// </summary>
     [Tooltip("Simplify address to filename without extension.")]
-    [Label("Address Simplified")]
+    [Label("Address Simplified"), Space]
     public bool simplified;
 
     /// <summary>
@@ -112,8 +114,8 @@ public class AddressableImportRule
     public string addressReplacement = string.Empty;
 
     #endregion
-    
-    
+
+
     private AddressableImportFilter _filter = new AddressableImportFilter();
     public AddressableImportFilter Filter => _filter ?? new AddressableImportFilter();
     
@@ -136,7 +138,7 @@ public class AddressableImportRule
     {
         return string.IsNullOrEmpty(searchString) || Filter.IsMatch(this,searchString);
     }
-    
+
     /// <summary>
     /// Returns True if given assetPath matched with the rule.
     /// </summary>
