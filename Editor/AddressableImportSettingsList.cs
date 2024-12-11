@@ -5,12 +5,22 @@ using System.Linq;
 using System.IO;
 using UnityAddressableImporter.Helper;
 
+#if ODIN_INSPECTOR
+using Sirenix.OdinInspector;
+#endif
+
 public class AddressableImportSettingsList : ScriptableObject
 {
     public const string kConfigObjectName = "addressableimportsettingslist";
     public const string kDefaultPath = "Assets/AddressableAssetsData/AddressableImportSettingsList.asset";
-    public List<AddressableImportSettings> SettingList;
-    public List<AddressableImportSettings> EnabledSettingsList => SettingList.Where((s) => s?.rulesEnabled == true).ToList();
+
+#if ODIN_INSPECTOR
+    [ListDrawerSettings(ListElementLabelName = "@name")]
+    [InlineEditor]
+#endif
+    public List<AddressableImportSettings> SettingList = new();
+    
+    public List<AddressableImportSettings> EnabledSettingsList => SettingList.Where((s) => s?.IsRulesEnabled == true).ToList();
     public bool ShowImportProgressBar = true;
 
     public static AddressableImportSettingsList Instance
@@ -44,22 +54,25 @@ public class AddressableImportSettingsList : ScriptableObject
 
             // If AddressableImportSettingsList doesn't exist but AddressableImportSettings exists, create the list.
             var importSettingsGuidList = AssetDatabase.FindAssets($"t:{nameof(AddressableImportSettings)}");
-            if (importSettingsGuidList.Length > 0)
-            {
-                var settingList = importSettingsGuidList.Select((guid) => AssetDatabase.LoadAssetAtPath<AddressableImportSettings>(AssetDatabase.GUIDToAssetPath(guid))).ToList();
-                var asset = ScriptableObject.CreateInstance<AddressableImportSettingsList>();
-                asset.SettingList = settingList;
-                var path = Path.Combine(Path.GetDirectoryName(AssetDatabase.GUIDToAssetPath(importSettingsGuidList[0])),
-                                        nameof(AddressableImportSettingsList) + ".asset");
-                Debug.LogFormat("Created AddressableImportSettingsList at path: {0}", path);
-                AssetDatabase.CreateAsset(asset, path);
-                AssetDatabase.SaveAssets();
-                so = asset;
-                EditorBuildSettings.AddConfigObject(kConfigObjectName, so, true);
-                return so;
-            }
-
-            return null;
+            if (importSettingsGuidList.Length <= 0) return null;
+            
+            var settingList = importSettingsGuidList
+                .Select((guid) => AssetDatabase.LoadAssetAtPath<AddressableImportSettings>(AssetDatabase.GUIDToAssetPath(guid))).ToList();
+            
+            var asset = CreateInstance<AddressableImportSettingsList>();
+            asset.SettingList = settingList;
+            
+            var path = Path.Combine(Path.GetDirectoryName(AssetDatabase.GUIDToAssetPath(importSettingsGuidList[0])),
+                nameof(AddressableImportSettingsList) + ".asset");
+            
+            Debug.LogFormat("Created AddressableImportSettingsList at path: {0}", path);
+            
+            AssetDatabase.CreateAsset(asset, path);
+            AssetDatabase.SaveAssets();
+            
+            so = asset;
+            EditorBuildSettings.AddConfigObject(kConfigObjectName, so, true);
+            return so;
         }
     }
 

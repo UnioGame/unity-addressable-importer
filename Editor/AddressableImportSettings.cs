@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 using UnityEditor;
 using UnityEditor.AddressableAssets;
 using System.Collections.Generic;
@@ -18,9 +19,22 @@ public class AddressableImportSettings : ScriptableObject
     [SerializeField]
     public bool rulesEnabled = true;
 
+    [Tooltip("Toggle rules filtering by a build target platform")]
+#if ODIN_INSPECTOR
+    [ShowIf(nameof(rulesEnabled))]
+#endif
+    public bool enablePlatformRule = false;
+    
+    [Tooltip("Build target platform for filtering rules")]
+#if ODIN_INSPECTOR
+    [ShowIf(nameof(enablePlatformRule))]
+#endif
+    public BuildTarget[] platforms = Array.Empty<BuildTarget>();
+    
     [Tooltip("Creates a group if the specified group doesn't exist.")]
     public bool allowGroupCreation = false;
 
+    
     [Space]
     [Tooltip("Rules for managing imported assets.")]
 #if ODIN_INSPECTOR
@@ -41,6 +55,30 @@ public class AddressableImportSettings : ScriptableObject
 #endif
     [SerializeReference]
     public List<IAddressableImporterCustomRule> customRules = new();
+
+    public bool IsRulesEnabled => rulesEnabled && IsRuleValidByActiveBuildTarget;
+    
+    public bool IsRuleValidByActiveBuildTarget => ValidateRulesByBuildTarget(EditorUserBuildSettings.activeBuildTarget);
+    
+    public bool ValidateRulesByBuildTarget(BuildTarget buildTarget)
+    {
+        if (!rulesEnabled)
+        {
+            return false;
+        }
+
+        if (!enablePlatformRule)
+        {
+            return true;
+        }
+
+        if(platforms.Length == 0)
+        {
+            return true;
+        }
+        
+        return platforms.Contains(buildTarget);
+    }
     
     [ButtonMethod]
     public void Save()
