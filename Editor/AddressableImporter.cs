@@ -328,8 +328,9 @@ public class AddressableImporter : AssetPostprocessor
     {
         foreach (var r in importSettings.rules)
         {
-            if (!r.Match(assetPath))
-                continue;
+            if(r.enabled == false) continue;
+            if (!r.Match(assetPath)) continue;
+            
             rule = r;
             return true;
         }

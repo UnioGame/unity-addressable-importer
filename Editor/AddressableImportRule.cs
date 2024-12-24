@@ -53,6 +53,11 @@ public class AddressableImportRule
     public string name;
     
     /// <summary>
+    /// is rule enabled
+    /// </summary>
+    public bool enabled = true;
+    
+    /// <summary>
     /// Path pattern.
     /// </summary>
     [Tooltip("The assets in this path will be processed.")]
