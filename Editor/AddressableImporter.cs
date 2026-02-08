@@ -6,7 +6,9 @@ using UnityEditor.AddressableAssets.Settings;
 using System;
 using System.Linq;
 using System.IO;
+using Unity.Profiling;
 using UnityEditor.AddressableAssets.Settings.GroupSchemas;
+using UnityEngine.Profiling;
 
 #if UNITY_2021_2_OR_NEWER
 using UnityEditor.SceneManagement;
@@ -17,6 +19,10 @@ using UnityEditor.Experimental.SceneManagement;
 [InitializeOnLoad]
 public class AddressableImporter : AssetPostprocessor
 {
+    public static long LastImportTime = 0;
+    public static long ImportDelay = 1000;
+    public static ProfilerMarker ProfilerMarker = new ProfilerMarker("AddressableImporter.OnPostprocessAllAssets");
+    
     // The selection active object
     static UnityEngine.Object selectionActiveObject = null;
 
@@ -29,12 +35,24 @@ public class AddressableImporter : AssetPostprocessor
     {
         selectionActiveObject = Selection.activeObject;
     }
+    
+    static bool IsValidImportTime()
+    {
+        var time = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        var timeDiff = time - LastImportTime;
+        if (timeDiff < ImportDelay) return false;
+        LastImportTime = time;
+        return true;
+    }
 
     static void OnPostprocessAllAssets(string[] importedAssets, string[] deletedAssets, string[] movedAssets, string[] movedFromAssetPaths)
     {
+        if (!IsValidImportTime()) return;
+        
         var isDirty = false;
         try
         {
+            ProfilerMarker.Begin();
             //Place the Asset Database in a state where
             //importing is suspended for most APIs
             AssetDatabase.StartAssetEditing();
@@ -46,6 +64,8 @@ public class AddressableImporter : AssetPostprocessor
             //a "finally" block, we ensure the AssetDatabase
             //state will be reset when leaving this function
             AssetDatabase.StopAssetEditing();
+            
+            ProfilerMarker.End();
         }
         
         if (isDirty)
