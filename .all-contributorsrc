@@ -166,6 +166,24 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "Brian-Jiang",
+      "name": "Brian",
+      "avatar_url": "https://avatars.githubusercontent.com/u/35553805?v=4",
+      "profile": "https://github.com/Brian-Jiang",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "rlintott",
+      "name": "Ryan",
+      "avatar_url": "https://avatars.githubusercontent.com/u/50784910?v=4",
+      "profile": "https://github.com/rlintott",
+      "contributions": [
+        "bug"
+      ]
     }
   ],
   "contributorsPerLine": 7,
@@ -174,5 +192,6 @@
   "repoType": "github",
   "repoHost": "https://github.com",
   "skipCi": true,
-  "commitConvention": "angular"
+  "commitConvention": "angular",
+  "commitType": "docs"
 }

@@ -1,3 +1,17 @@
+# [0.17.0](https://github.com/favoyang/unity-addressable-importer/compare/v0.16.2...v0.17.0) (2025-12-15)
+
+
+### Features
+
+* update addressables version to 1.19.19 ([1e89b64](https://github.com/favoyang/unity-addressable-importer/commit/1e89b64f975d3ed93ed47b9f9b7b412897105698)), closes [#95](https://github.com/favoyang/unity-addressable-importer/issues/95)
+
+## [0.16.2](https://github.com/favoyang/unity-addressable-importer/compare/v0.16.1...v0.16.2) (2025-12-15)
+
+
+### Bug Fixes
+
+* use AddressableAssetEntry.SetLabel function so group settings can be serialized ([#95](https://github.com/favoyang/unity-addressable-importer/issues/95)) ([ded7fc2](https://github.com/favoyang/unity-addressable-importer/commit/ded7fc2312946cbdde594ff4e5add5e4a1e9db16))
+
 ## [0.16.1](https://github.com/favoyang/unity-addressable-importer/compare/v0.16.0...v0.16.1) (2023-02-08)
 
 
