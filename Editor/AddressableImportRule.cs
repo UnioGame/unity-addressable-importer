@@ -42,7 +42,9 @@ public enum GroupTemplateApplicationMode
 
 [System.Serializable]
 public class AddressableImportRule
+#if ODIN_INSPECTOR
     : ISearchFilterable
+#endif
 {
     #region inspector
 
