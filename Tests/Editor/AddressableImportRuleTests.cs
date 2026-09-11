@@ -118,6 +118,11 @@ namespace UnityAddressableImporter.Tests
             rule.path = @"Assets/Sprites/(?<category>.*)/(?<asset>.*)\.png";
             rule.groupName = "${PATH[0]}:${category}-${asset}";
             Assert.AreEqual("Assets:cat-foo", rule.ParseGroupReplacement("Assets/Sprites/cat/foo.png"));
+            // Test regex captured folder separators
+            rule.matchType = AddressableImportRuleMatchType.Regex;
+            rule.path = @"Assets/Game\.Content/Art/(?<path>[\w,\W\/,\\]+)/([\w,\W\/,\\]+)\.[\w]+";
+            rule.groupName = "art-${path}";
+            Assert.AreEqual("art-Avatars-Frames", rule.ParseGroupReplacement("Assets/Game.Content/Art/Avatars/Frames/avatar_frames.png"));
         }
 
         [Test]

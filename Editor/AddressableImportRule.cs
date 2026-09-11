@@ -174,7 +174,7 @@ public class AddressableImportRule
     /// </summary>
     public string ParseGroupReplacement(string assetPath)
     {
-        return ParseReplacement(assetPath, groupName);
+        return SanitizeAddressableGroupName(ParseReplacement(assetPath, groupName));
 
     }
 
@@ -202,6 +202,11 @@ public class AddressableImportRule
             replacement = Regex.Replace(assetPath, pathRegex, replacement);
         }
         return replacement;
+    }
+
+    private static string SanitizeAddressableGroupName(string groupName)
+    {
+        return groupName?.Trim().Replace('/', '-').Replace('\\', '-');
     }
 
     /// <summary>
