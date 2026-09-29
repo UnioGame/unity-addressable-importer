@@ -297,7 +297,7 @@ public class AddressableImporter : AssetPostprocessor
                 var ruleData = new AddressableAssetRuleData { assetPath = assetPath, movedFromAssetPath = movedFromAssetPath };
                 foreach (var customRule in importSettings.customRules)
                 {
-                    if (!customRule.Enabled) continue;
+                    if (customRule == null || !customRule.Enabled) continue; // a removed rule type leaves a null entry
                     if (customRule.Import(ruleData, batch.settings, importSettings))
                     {
                         dirty = true;
@@ -511,47 +511,6 @@ public class AddressableImporter : AssetPostprocessor
         if (batch.Changed)
             Debug.Log($"[AddressableImporter] apply: {paths.Length} assets, created {batch.created}, moved {batch.moved}, updated {batch.updated}");
         return _stats.created + _stats.moved + _stats.updated - before;
-    }
-
-    /// <summary>
-    /// Explicit entry for custom rules (generated manifests): the asset goes to <paramref name="groupName"/> with the given
-    /// address and at least the given labels. Writes only what differs; returns true when something was written (the caller
-    /// batches the save). A missing group is reported and skipped (rules never create groups here).
-    /// </summary>
-    public static bool EnsureEntry(AddressableAssetSettings settings, string guid, string groupName, string address, IReadOnlyList<string> labels)
-    {
-        if (string.IsNullOrEmpty(guid)) return false;
-        if (!TryGetGroup(settings, groupName, out var group))
-        {
-            Debug.LogError($"[AddressableImporter] group {groupName} not found for {guid}");
-            return false;
-        }
-
-        var changed = false;
-        var entry = settings.FindAssetEntry(guid);
-        if (entry == null || entry.parentGroup != group)
-        {
-            entry = settings.CreateOrMoveEntry(guid, group, false, false);
-            changed = true;
-        }
-        if (entry == null) return false;
-
-        if (!string.IsNullOrEmpty(address) && entry.address != address)
-        {
-            entry.SetAddress(address, false);
-            changed = true;
-        }
-
-        if (labels != null)
-            foreach (var label in labels)
-            {
-                if (string.IsNullOrEmpty(label) || entry.labels.Contains(label)) continue;
-                entry.SetLabel(label, true, true, false);
-                changed = true;
-            }
-
-        if (changed) settings.SetDirty(AddressableAssetSettings.ModificationEvent.EntryModified, entry, false, true);
-        return changed;
     }
 
     static bool IsAssetIgnored(string assetPath)
