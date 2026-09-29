@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using UnityEditor.AddressableAssets.Settings;
 using UnityEngine.AddressableAssets;
 using System.Collections.Generic;
@@ -146,27 +146,86 @@ public class AddressableImportRule
         return string.IsNullOrEmpty(searchString) || Filter.IsMatch(this,searchString);
     }
 
+    // I4: compiled pattern + literal prefix, cached per pattern text (rules are edited in the inspector)
+    [System.NonSerialized] private string _cacheKey;
+    [System.NonSerialized] private Regex _compiled;
+    [System.NonSerialized] private string _prefix = string.Empty;
+    [System.NonSerialized] private bool _prefixOnly;
+
+    private void EnsureCompiled(string trimmed)
+    {
+        var key = (int)matchType + ":" + trimmed;
+        if (_cacheKey == key) return;
+        _cacheKey = key;
+        _prefixOnly = false;
+        _prefix = string.Empty;
+        _compiled = null;
+
+        if (matchType == AddressableImportRuleMatchType.Wildcard)
+        {
+            var wild = trimmed.IndexOfAny(new[] { '*', '?' });
+            if (wild < 0)
+            {
+                _prefix = trimmed;
+                _prefixOnly = true;
+                return;
+            }
+
+            _prefix = trimmed.Substring(0, wild);
+            _compiled = new Regex("^" + Regex.Escape(trimmed).Replace(@"\*", ".*").Replace(@"\?", "."));
+            return;
+        }
+
+        _compiled = new Regex(trimmed);
+        _prefix = LiteralPrefix(trimmed);
+    }
+
+    /// <summary>literal characters every match must start with (empty when unknown)</summary>
+    private static string LiteralPrefix(string pattern)
+    {
+        var i = 0;
+        if (pattern.Length > 0 && pattern[0] == '^') i = 1;
+        var depthParen = 0;
+        var depthBracket = 0;
+        for (var k = 0; k < pattern.Length; k++)
+        {
+            var c = pattern[k];
+            if (c == '\\') { k++; continue; }
+            if (c == '[') depthBracket++;
+            else if (c == ']' && depthBracket > 0) depthBracket--;
+            else if (depthBracket == 0 && c == '(') depthParen++;
+            else if (depthBracket == 0 && c == ')' && depthParen > 0) depthParen--;
+            else if (depthBracket == 0 && depthParen == 0 && c == '|') return string.Empty;
+        }
+
+        var sb = new System.Text.StringBuilder();
+        for (; i < pattern.Length; i++)
+        {
+            var c = pattern[i];
+            if ("\\^$.|?*+()[]{}".IndexOf(c) >= 0)
+            {
+                if ((c == '?' || c == '*' || c == '{') && sb.Length > 0) sb.Length--;
+                break;
+            }
+            sb.Append(c);
+        }
+        return sb.ToString();
+    }
+
     /// <summary>
     /// Returns True if given assetPath matched with the rule.
     /// </summary>
     public bool Match(string assetPath)
     {
-        path = path.Trim();
-        if (string.IsNullOrEmpty(path))
+        var trimmed = path == null ? string.Empty : path.Trim();
+        if (string.IsNullOrEmpty(trimmed))
             return false;
-        if (matchType == AddressableImportRuleMatchType.Wildcard)
-        {
-            if (path.Contains("*") || path.Contains("?"))
-            {
-                var regex = "^" + Regex.Escape(path).Replace(@"\*", ".*").Replace(@"\?", ".");
-                return Regex.IsMatch(assetPath, regex);
-            }
-            else
-                return assetPath.StartsWith(path);
-        }
-        else if (matchType == AddressableImportRuleMatchType.Regex)
-            return Regex.IsMatch(assetPath, path);
-        return false;
+        EnsureCompiled(trimmed);
+        if (_prefix.Length > 0 && !assetPath.StartsWith(_prefix, System.StringComparison.Ordinal))
+            return false;
+        if (_prefixOnly)
+            return true;
+        return _compiled.IsMatch(assetPath);
     }
 
     /// <summary>
